@@ -1,0 +1,15 @@
+{
+  "name": "ctx-polyfill",
+  "version": "1.0.0",
+  "description": "Polyfill CanvasRenderingContext2D : currentTransform, resetTransform",
+  "main": "ctx-polyfill.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lifaon74/ctx-polyfill"
+  },
+  "author": "valentin",
+  "license": "MIT"
+}
