@@ -10,14 +10,8 @@
 
   // inspired form https://github.com/mozilla/pdf.js/blob/master/src/display/canvas.js
 
-  var CanvasRenderingContext2DHelper = {};
-
-  CanvasRenderingContext2DHelper.createSVGMatrix = function() {
-    return document.createElementNS('http://www.w3.org/2000/svg', 'svg').createSVGMatrix();
-  };
-
-  CanvasRenderingContext2DHelper.arrayToSVGMatrix = function(array) {
-    var matrix = CanvasRenderingContext2DHelper.createSVGMatrix();
+  var arrayToSVGMatrix = function(array) {
+    var matrix = document.createElementNS('http://www.w3.org/2000/svg', 'svg').createSVGMatrix();
     matrix.a = array[0];
     matrix.b = array[1];
     matrix.c = array[2];
@@ -27,20 +21,17 @@
     return matrix;
   };
 
-  CanvasRenderingContext2DHelper.svgMatrixToArray = function(matrix) {
-    return [
-      matrix.a,
-      matrix.b,
-      matrix.c,
-      matrix.d,
-      matrix.e,
-      matrix.f
-    ];
-  };
-  
-  CanvasRenderingContext2DHelper.createIdentityMatrix = function() {
-    return [ 1, 0, 0, 1, 0, 0 ];
-  };
+  // var svgMatrixToArray = function(matrix) {
+  //   return [
+  //     matrix.a,
+  //     matrix.b,
+  //     matrix.c,
+  //     matrix.d,
+  //     matrix.e,
+  //     matrix.f
+  //   ];
+  // };
+
 
   if(!('currentTransform' in CanvasRenderingContext2D.prototype)) {
     if('mozCurrentTransform' in CanvasRenderingContext2D.prototype) {
@@ -56,14 +47,13 @@
       });
     } else {
 
-
-      CanvasRenderingContext2DHelper.getContext = HTMLCanvasElement.prototype.getContext;
+      var getContext = HTMLCanvasElement.prototype.getContext;
       HTMLCanvasElement.prototype.getContext = function(contextType, contextAttributes) {
-        var context = CanvasRenderingContext2DHelper.getContext.call(this, contextType, contextAttributes);
+        var context = getContext.call(this, contextType, contextAttributes);
         switch(contextType) {
           case '2d':
             context._transformStack = [];
-            context._transformMatrix = CanvasRenderingContext2DHelper.createIdentityMatrix();
+            context._transformMatrix = [ 1, 0, 0, 1, 0, 0 ];
             break;
         }
         return context;
@@ -83,25 +73,25 @@
       });
 
 
-      CanvasRenderingContext2DHelper.translate = CanvasRenderingContext2D.prototype.translate;
+      var translate = CanvasRenderingContext2D.prototype.translate;
       CanvasRenderingContext2D.prototype.translate = function(x, y) {
         var matrix = this._transformMatrix;
         matrix[4] = matrix[0] * x + matrix[2] * y + matrix[4];
         matrix[5] = matrix[1] * x + matrix[3] * y + matrix[5];
-        CanvasRenderingContext2DHelper.translate.call(this, x, y);
+        translate.call(this, x, y);
       };
 
-      CanvasRenderingContext2DHelper.scale = CanvasRenderingContext2D.prototype.scale;
+      var scale = CanvasRenderingContext2D.prototype.scale;
       CanvasRenderingContext2D.prototype.scale = function(x, y) {
         var matrix = this._transformMatrix;
         matrix[0] *= x;
         matrix[1] *= x;
         matrix[2] *= y;
         matrix[3] *= y;
-        CanvasRenderingContext2DHelper.scale.call(this, x, y);
+        scale.call(this, x, y);
       };
 
-      CanvasRenderingContext2DHelper.rotate = CanvasRenderingContext2D.prototype.rotate;
+      var rotate = CanvasRenderingContext2D.prototype.rotate;
       CanvasRenderingContext2D.prototype.rotate = function(angle) {
         var cosValue = Math.cos(angle);
         var sinValue = Math.sin(angle);
@@ -116,10 +106,10 @@
           matrix[5]
         ];
 
-        CanvasRenderingContext2DHelper.rotate.call(this, angle);
+        rotate.call(this, angle);
       };
 
-      CanvasRenderingContext2DHelper.transform = CanvasRenderingContext2D.prototype.transform;
+      var transform = CanvasRenderingContext2D.prototype.transform;
       CanvasRenderingContext2D.prototype.transform = function(a, b, c, d, e, f) {
         var matrix =  this._transformMatrix;
         this._transformMatrix = [
@@ -130,29 +120,29 @@
           matrix[0] * e + matrix[2] * f + matrix[4],
           matrix[1] * e + matrix[3] * f + matrix[5]
         ];
-        CanvasRenderingContext2DHelper.transform.call(this, a, b, c, d, e, f);
+        transform.call(this, a, b, c, d, e, f);
       };
 
-      CanvasRenderingContext2DHelper.setTransform = CanvasRenderingContext2D.prototype.setTransform ;
+      var setTransform = CanvasRenderingContext2D.prototype.setTransform ;
       CanvasRenderingContext2D.prototype.setTransform  = function(a, b, c, d, e, f) {
         this._transformMatrix = [a, b, c, d, e, f];
-        CanvasRenderingContext2DHelper.transform.setTransform(this, a, b, c, d, e, f);
+        transform.setTransform(this, a, b, c, d, e, f);
       };
 
-      CanvasRenderingContext2DHelper.save = CanvasRenderingContext2D.prototype.save;
+      var save = CanvasRenderingContext2D.prototype.save;
       CanvasRenderingContext2D.prototype.save = function() {
         this._transformStack.push(this._transformMatrix);
         this._transformMatrix =  this._transformMatrix.slice(0, 6); // copy
-        CanvasRenderingContext2DHelper.save.call(this);
+        save.call(this);
       };
 
-      CanvasRenderingContext2DHelper.restore = CanvasRenderingContext2D.prototype.restore;
+      var restore = CanvasRenderingContext2D.prototype.restore;
       CanvasRenderingContext2D.prototype.restore = function() {
         var matrix = this._transformStack.pop();
         if(matrix) {
           this._transformMatrix = matrix;
         }
-        CanvasRenderingContext2DHelper.restore.call(this);
+        restore.call(this);
       };
       
     }
@@ -185,10 +175,48 @@
   }
 
   if(!('resetTransform' in CanvasRenderingContext2D.prototype)) {
-    CanvasRenderingContext2D.prototype.resetTransform  = function() {
+    CanvasRenderingContext2D.prototype.resetTransform = function() {
       this.setTransform(1, 0, 0, 1, 0, 0);
     };
   }
 
-  CanvasRenderingContext2D.arrayToSVGMatrix = CanvasRenderingContext2DHelper.arrayToSVGMatrix;
+  if(!('imageSmoothingEnabled' in CanvasRenderingContext2D.prototype)) {
+    Object.defineProperty(CanvasRenderingContext2D.prototype, 'imageSmoothingEnabled', {
+      get: function () {
+        if(typeof this.mozImageSmoothingEnabled !== 'undefined') {
+          return this.mozImageSmoothingEnabled;
+        } else if(typeof this.webkitImageSmoothingEnabled !== 'undefined') {
+          return this.webkitImageSmoothingEnabled;
+        } else if(typeof this.msImageSmoothingEnabled !== 'undefined') {
+          return this.msImageSmoothingEnabled;
+        } else {
+          return true;
+        }
+      },
+      set: function(enable) {
+        if(typeof this.mozImageSmoothingEnabled !== 'undefined') {
+          this.mozImageSmoothingEnabled = enable;
+        } else if(typeof this.webkitImageSmoothingEnabled !== 'undefined') {
+          this.webkitImageSmoothingEnabled = enable;
+        } else if(typeof this.msImageSmoothingEnabled !== 'undefined') {
+          this.msImageSmoothingEnabled = enable;
+        }
+      },
+      enumerable: true,
+      configurable: true
+    });
+
+    // document.body.innerHTML = '';
+    // canvas = document.createElement('canvas');
+    // document.body.appendChild(canvas);
+    // canvas.width = 200;
+    // canvas.height = 200;
+    // ctx = canvas.getContext('2d');
+    //
+    // console.log(ctx.imageSmoothingEnabled);
+  }
+
+  CanvasRenderingContext2D.arrayToSVGMatrix = arrayToSVGMatrix;
+
+
 })();
