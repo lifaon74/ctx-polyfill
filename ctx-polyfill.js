@@ -183,22 +183,22 @@
   if(!('imageSmoothingEnabled' in CanvasRenderingContext2D.prototype)) {
     Object.defineProperty(CanvasRenderingContext2D.prototype, 'imageSmoothingEnabled', {
       get: function () {
-        if(typeof this.mozImageSmoothingEnabled !== 'undefined') {
+        if(this.mozImageSmoothingEnabled !== void 0) {
           return this.mozImageSmoothingEnabled;
-        } else if(typeof this.webkitImageSmoothingEnabled !== 'undefined') {
+        } else if(this.webkitImageSmoothingEnabled !== void 0) {
           return this.webkitImageSmoothingEnabled;
-        } else if(typeof this.msImageSmoothingEnabled !== 'undefined') {
+        } else if(this.msImageSmoothingEnabled !== void 0) {
           return this.msImageSmoothingEnabled;
         } else {
           return true;
         }
       },
       set: function(enable) {
-        if(typeof this.mozImageSmoothingEnabled !== 'undefined') {
+        if(this.mozImageSmoothingEnabled !== void 0) {
           this.mozImageSmoothingEnabled = enable;
-        } else if(typeof this.webkitImageSmoothingEnabled !== 'undefined') {
+        } else if(this.webkitImageSmoothingEnabled !== void 0) {
           this.webkitImageSmoothingEnabled = enable;
-        } else if(typeof this.msImageSmoothingEnabled !== 'undefined') {
+        } else if(this.msImageSmoothingEnabled !== void 0) {
           this.msImageSmoothingEnabled = enable;
         }
       },
