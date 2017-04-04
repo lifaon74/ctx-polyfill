@@ -32,6 +32,11 @@
   //   ];
   // };
 
+  if(!('resetTransform' in CanvasRenderingContext2D.prototype)) {
+    CanvasRenderingContext2D.prototype.resetTransform = function() {
+      this.setTransform(1, 0, 0, 1, 0, 0);
+    };
+  }
 
   if(!('currentTransform' in CanvasRenderingContext2D.prototype)) {
     if('mozCurrentTransform' in CanvasRenderingContext2D.prototype) {
@@ -123,10 +128,16 @@
         transform.call(this, a, b, c, d, e, f);
       };
 
-      var setTransform = CanvasRenderingContext2D.prototype.setTransform ;
+      var setTransform = CanvasRenderingContext2D.prototype.setTransform;
       CanvasRenderingContext2D.prototype.setTransform  = function(a, b, c, d, e, f) {
         this._transformMatrix = [a, b, c, d, e, f];
-        transform.setTransform(this, a, b, c, d, e, f);
+        setTransform.call(this, a, b, c, d, e, f);
+      };
+
+      var resetTransform = CanvasRenderingContext2D.prototype.resetTransform;
+      CanvasRenderingContext2D.prototype.resetTransform  = function() {
+        this._transformMatrix = [1, 0, 0, 1, 0, 0];
+        resetTransform.call(this);
       };
 
       var save = CanvasRenderingContext2D.prototype.save;
@@ -146,39 +157,8 @@
       };
       
     }
-
-      // document.body.innerHTML = '';
-    // canvas = document.createElement('canvas');
-    // document.body.appendChild(canvas);
-    // canvas.width = 200;
-    // canvas.height = 200;
-    // ctx = canvas.getContext('2d');
-    //
-    // // ctx.fillRect(0, 0, 100, 100);
-    //
-    // ctx.save();
-    // ctx.translate(10, 10);
-    // console.log(ctx.currentTransform); // [ 1, 0, 0, 1, 10, 10 ]
-    //
-    // ctx.scale(2, 2);
-    // console.log(ctx.currentTransform); // [ 2, 0, 0, 2, 10, 10 ]
-    //
-    // ctx.rotate(90 * Math.PI / 180);
-    // ctx.translate(5, 5);
-    // console.log(ctx.currentTransform); // [ -8.742277657347586e-8, 2, -2, -8.742277657347586e-8, 0, 20 ]
-    //
-    // ctx.transform(1, 2, 3, 4, 5, 6);
-    // console.log(ctx.currentTransform); // [ -4, 1.9999998807907104, -8, 5.999999523162842, -12, 30 ]
-    //
-    // ctx.restore();
-    // console.log(ctx.currentTransform); // [ 1, 0, 0, 1, 0, 0 ]
   }
 
-  if(!('resetTransform' in CanvasRenderingContext2D.prototype)) {
-    CanvasRenderingContext2D.prototype.resetTransform = function() {
-      this.setTransform(1, 0, 0, 1, 0, 0);
-    };
-  }
 
   if(!('imageSmoothingEnabled' in CanvasRenderingContext2D.prototype)) {
     Object.defineProperty(CanvasRenderingContext2D.prototype, 'imageSmoothingEnabled', {
