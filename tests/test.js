@@ -43,14 +43,25 @@ test.describe('CTX polyfill', function() {
       };
     `;
 
+    const getPixel = `
+      var getPixel = function(ctx, x, y) {
+        return ctx.getImageData(x, y, 1, 1).data;
+      };
+    `;
+
+    const prepareCanvas = `
+        var canvas = document.getElementById('canvas');
+        var ctx = canvas.getContext('2d');
+        ctx.resetTransform();
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    `;
+
 
     test.it('Test currentTransform', () => {
       driver.wait(until.elementLocated(By.css('#canvas')));
 
       return tester.executeScript(driver, `
-        var canvas = document.getElementById('canvas');
-        var ctx = canvas.getContext('2d');
-
+        ${prepareCanvas}
         ${testCurrentTransForm}
 
         ctx.translate(250, 250);
@@ -70,9 +81,7 @@ test.describe('CTX polyfill', function() {
       driver.wait(until.elementLocated(By.css('#canvas')));
 
       return tester.executeScript(driver, `
-        var canvas = document.getElementById('canvas');
-        var ctx = canvas.getContext('2d');
-
+        ${prepareCanvas}
         ${testCurrentTransForm}
 
         ctx.translate(250, 250);
@@ -90,9 +99,7 @@ test.describe('CTX polyfill', function() {
       driver.wait(until.elementLocated(By.css('#canvas')));
 
       return tester.executeScript(driver, `
-        var canvas = document.getElementById('canvas');
-        var ctx = canvas.getContext('2d');
-
+        ${prepareCanvas}
         ${testCurrentTransForm}
 
         ctx.save();
@@ -118,8 +125,7 @@ test.describe('CTX polyfill', function() {
       driver.wait(until.elementLocated(By.css('#canvas')));
 
       return tester.executeScript(driver, `
-        var canvas = document.getElementById('canvas');
-        var ctx = canvas.getContext('2d');
+        ${prepareCanvas}
 
         if(!('imageSmoothingEnabled' in ctx)) throw new Error('imageSmoothingEnabled not present in ctx');
         ctx.imageSmoothingEnabled = true;
@@ -130,18 +136,54 @@ test.describe('CTX polyfill', function() {
       driver.wait(until.elementLocated(By.css('#canvas')));
 
       return tester.executeScript(driver, `
-        var canvas = document.getElementById('canvas');
-        var ctx = canvas.getContext('2d');
-        
+        ${prepareCanvas}
+        ${getPixel}
+
         if(!('ellipse' in ctx)) throw new Error('Ellipse not present in ctx');
         // ctx.lineWidth = 10;
         ctx.beginPath();
         ctx.ellipse(100, 100, 50, 75, 45 * Math.PI/180, 0, 2 * Math.PI);
         ctx.stroke();
-        if(ctx.getImageData(122, 36, 1, 1).data[3] === 0) throw new Error('Ellipse draw failed');
+        if(getPixel(ctx, 122, 36)[3] === 0) throw new Error('Ellipse draw failed');
       `);
     });
 
+    test.it('Test Path2D methods', () => {
+      driver.wait(until.elementLocated(By.css('#canvas')));
+
+      return tester.executeScript(driver, `
+        ${prepareCanvas}
+        ${getPixel}
+
+        ctx.translate(0.5, 0.5);
+        var path2D = new Path2D();
+        path2D.rect(10, 10, 10, 10);
+        path2D.moveTo(150, 20);
+        path2D.arcTo(150, 100, 50, 20, 30);
+        var path2DCopy = new Path2D(path2D);
+        ctx.stroke(path2DCopy);
+
+        if(getPixel(ctx, 10, 10)[3] === 0) throw new Error('Path2D draw failed');
+      `);
+    });
+
+    test.it('Test Path2D addPath', () => {
+      driver.wait(until.elementLocated(By.css('#canvas')));
+
+      return tester.executeScript(driver, `
+        ${prepareCanvas}
+        ${getPixel}
+
+        ctx.translate(0.5, 0.5);
+        var path2D = new Path2D();
+        path2D.rect(10, 10, 10, 10);
+        var path2DCopy = new Path2D();
+        path2DCopy.addPath(path2D);
+        ctx.stroke(path2DCopy);
+        
+        if(getPixel(ctx, 10, 10)[3] === 0) throw new Error('Path2D addPath draw failed');
+      `);
+    });
 
     test.after(() => {
       driver.quit();

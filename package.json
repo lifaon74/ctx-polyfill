@@ -1,7 +1,7 @@
 {
   "name": "ctx-polyfill",
-  "version": "1.0.4",
-  "description": "Polyfill CanvasRenderingContext2D : currentTransform, resetTransform, imageSmoothingEnabled, etc...",
+  "version": "1.1.0",
+  "description": "Polyfill CanvasRenderingContext2D and Path2D (currentTransform, resetTransform, imageSmoothingEnabled, etc...)",
   "main": "ctx-polyfill.js",
   "scripts": {
     "start": "uglifyjs ctx-polyfill.js --stats -m -o ctx-polyfill.min.js",
