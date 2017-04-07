@@ -16,8 +16,8 @@ test.describe('CTX polyfill', function() {
   this.timeout(30000);
 
   tester.testWith([
-    Tester.EDGE,
-    Tester.CHROME,
+    // Tester.EDGE,
+    // Tester.CHROME,
     // Tester.FIREFOX,
     // Tester.OPERA,
     Tester.IE

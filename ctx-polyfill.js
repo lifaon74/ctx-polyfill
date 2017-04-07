@@ -62,19 +62,19 @@
         configurable: true
       });
     } else {
-
       var getContext = HTMLCanvasElement.prototype.getContext;
       HTMLCanvasElement.prototype.getContext = function(contextType, contextAttributes) {
         var context = getContext.call(this, contextType, contextAttributes);
         switch(contextType) {
           case '2d':
-            context._transformStack = [];
-            context._transformMatrix = [ 1, 0, 0, 1, 0, 0 ];
+            Object.defineProperties(context, {
+              '_transformStack': { value: [], configurable: true, writable: true },
+              '_transformMatrix': { value: [1, 0, 0, 1, 0, 0], configurable: true, writable: true }
+            });
             break;
         }
         return context;
       };
-
 
       Object.defineProperty(canvasRenderingContext2DPrototype, 'currentTransform', {
         get: function () {
@@ -82,15 +82,16 @@
             CanvasRenderingContext2D.arrayToSVGMatrix(this._transformMatrix) : this._transformMatrix;
         },
         set: function(matrix) {
-          this._transformMatrix = CanvasRenderingContext2D.useSvgMatrix ?
+          matrix = CanvasRenderingContext2D.useSvgMatrix ?
             CanvasRenderingContext2D.svgMatrixToArray(matrix) : matrix;
+          this._transformMatrix = matrix;
           this.setTransform(
-            this._transformMatrix[0],
-            this._transformMatrix[1],
-            this._transformMatrix[2],
-            this._transformMatrix[3],
-            this._transformMatrix[4],
-            this._transformMatrix[5]
+            matrix[0],
+            matrix[1],
+            matrix[2],
+            matrix[3],
+            matrix[4],
+            matrix[5]
           );
         },
         enumerable: true,
@@ -234,60 +235,50 @@
    */
 
   if(!('Path2D' in window) || !('addPath' in window.Path2D.prototype)) {
-    var supportNativePath2D = ('Path2D' in window);
 
     // polyfill Path2D class
-    if(!supportNativePath2D) {
-      Path2D = function(path2D) {
-        if(path2D instanceof Path2D) {
-          this.addPath(path2D);
-        }
-      };
-      window.Path2D = Path2D;
-    }
+    window.Path2D = function(path2D) {
+      Object.defineProperty(this, '_operations', { value: [] });
+
+      if(path2D instanceof Path2D) {
+        this.addPath(path2D);
+      }
+    };
 
     var path2DPrototype = window.Path2D.prototype;
 
-    // save all operations for the path
-    Object.defineProperty(path2DPrototype, '_operations', { value: [] });
-
     ['arc', 'arcTo', 'bezierCurveTo', 'closePath', 'ellipse', 'lineTo', 'moveTo', 'quadraticCurveTo', 'rect']
       .forEach(function(attributeName) {
-        var original = path2DPrototype[attributeName];
         path2DPrototype[attributeName] = function() {
           this._operations.push({ type: attributeName, arguments: Array.prototype.slice.call(arguments, 0) });
-          if(supportNativePath2D) original.apply(this, arguments);
         };
       });
 
     // polyfill CanvasRenderingContext2D drawing Path2D
-    if(!supportNativePath2D) {
-      var canvasRenderingContext2DPrototype = CanvasRenderingContext2D.prototype;
-      ['fill', 'stroke', 'clip', 'isPointInPath', 'isPointInStroke']
-        .forEach(function(attributeName) {
-          var original = canvasRenderingContext2DPrototype[attributeName];
-          canvasRenderingContext2DPrototype[attributeName] = function(path2D) {
-            if(path2D instanceof Path2D) {
-              this.beginPath();
-              var operation;
-              for(var i = 0, l = path2D._operations.length; i < l; i++) {
-                operation = path2D._operations[i];
-                canvasRenderingContext2DPrototype[operation.type].apply(this, operation.arguments);
-              }
-              original.apply(this, Array.prototype.slice.call(arguments, 1));
-            } else {
-              original.apply(this, arguments);
+    var canvasRenderingContext2DPrototype = CanvasRenderingContext2D.prototype;
+    ['fill', 'stroke', 'clip', 'isPointInPath', 'isPointInStroke']
+      .forEach(function(attributeName) {
+        var original = canvasRenderingContext2DPrototype[attributeName];
+        canvasRenderingContext2DPrototype[attributeName] = function(path2D) {
+          if(path2D instanceof Path2D) {
+            this.beginPath();
+            var operation;
+            for(var i = 0, l = path2D._operations.length; i < l; i++) {
+              operation = path2D._operations[i];
+              canvasRenderingContext2DPrototype[operation.type].apply(this, operation.arguments);
             }
-          };
-        });
-    }
+            original.apply(this, Array.prototype.slice.call(arguments, 1));
+          } else {
+            original.apply(this, arguments);
+          }
+        };
+      });
+
 
     // polyfill addPath
     if(!('addPath' in path2DPrototype)) {
       path2DPrototype.addPath = function(path2D, transform) {
         if(transform !== void 0) {
-          if(supportNativePath2D) throw new Error('Transform is not supported yet on native Path2D addPath.');
-
           this._operations.push({ type: 'save', arguments: [] });
           this._operations.push({
             type: 'transform',

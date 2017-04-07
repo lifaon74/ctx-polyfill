@@ -10,6 +10,12 @@
       margin: 0;
     }
   </style>
+  <script>
+    window.onload = function() {
+       canvas = document.getElementById('canvas');
+       ctx = canvas.getContext('2d');
+    };
+  </script>
 </head>
 <body>
   <canvas id="canvas" style="position: fixed; background: #fafafa; top: 0; left: 0; width: 500px; height: 500px;" width="500" height="500"></canvas>
