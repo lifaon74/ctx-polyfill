@@ -52,7 +52,7 @@ test.describe('CTX polyfill', function() {
         var ctx = canvas.getContext('2d');
 
         ${testCurrentTransForm}
-        
+
         ctx.translate(250, 250);
         ctx.rotate(Math.PI / 4);
         ctx.scale(2, 2);
@@ -72,16 +72,16 @@ test.describe('CTX polyfill', function() {
       return tester.executeScript(driver, `
         var canvas = document.getElementById('canvas');
         var ctx = canvas.getContext('2d');
-        
+
         ${testCurrentTransForm}
-       
+
         ctx.translate(250, 250);
         ctx.rotate(Math.PI / 4);
         ctx.scale(2, 2);
 
         if(!('resetTransform' in ctx)) throw new Error('resetTransform not present in ctx');
         ctx.resetTransform();
-        
+
         testCurrentTransForm(ctx, [1, 0, 0, 1, 0, 0]);
       `);
     });
@@ -92,20 +92,20 @@ test.describe('CTX polyfill', function() {
       return tester.executeScript(driver, `
         var canvas = document.getElementById('canvas');
         var ctx = canvas.getContext('2d');
-        
+
         ${testCurrentTransForm}
-       
+
         ctx.save();
         ctx.translate(10, 10);
         testCurrentTransForm(ctx, [ 1, 0, 0, 1, 10, 10 ]);
-    
+
         ctx.scale(2, 2);
         testCurrentTransForm(ctx, [ 2, 0, 0, 2, 10, 10 ]);
- 
+
         ctx.rotate(90 * Math.PI / 180);
         ctx.translate(5, 5);
         testCurrentTransForm(ctx, [ -8.742277657347586e-8, 2, -2, -8.742277657347586e-8, 0, 20 ]);
-    
+
         ctx.transform(1, 2, 3, 4, 5, 6);
         testCurrentTransForm(ctx, [ -4, 1.9999998807907104, -8, 5.999999523162842, -12, 30 ]);
 
@@ -120,9 +120,25 @@ test.describe('CTX polyfill', function() {
       return tester.executeScript(driver, `
         var canvas = document.getElementById('canvas');
         var ctx = canvas.getContext('2d');
-        
+
         if(!('imageSmoothingEnabled' in ctx)) throw new Error('imageSmoothingEnabled not present in ctx');
         ctx.imageSmoothingEnabled = true;
+      `);
+    });
+
+    test.it('Test ellipse', () => {
+      driver.wait(until.elementLocated(By.css('#canvas')));
+
+      return tester.executeScript(driver, `
+        var canvas = document.getElementById('canvas');
+        var ctx = canvas.getContext('2d');
+        
+        if(!('ellipse' in ctx)) throw new Error('Ellipse not present in ctx');
+        // ctx.lineWidth = 10;
+        ctx.beginPath();
+        ctx.ellipse(100, 100, 50, 75, 45 * Math.PI/180, 0, 2 * Math.PI);
+        ctx.stroke();
+        if(ctx.getImageData(122, 36, 1, 1).data[3] === 0) throw new Error('Ellipse draw failed');
       `);
     });
 
