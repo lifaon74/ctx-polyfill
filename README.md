@@ -20,13 +20,10 @@ npm i ctx-polyfill --save
 Stable: arc, arcTo, bezierCurveTo, closePath, ellipse, lineTo, moveTo, quadraticCurveTo, rect.
 
 Experimental: [addPath](https://developer.mozilla.org/en-US/docs/Web/API/Path2D/addPath).
-
-With **native** Path2D, `addPath` does not support yet a `transform` argument. If you absolutely need it, do : `delete window.Path2D`, the polyfill will build it's own Path2D class.
-
 For size reasons, Path2D polyfill does'nt support SVG path (used as argument in constructor).
 
 #### Helper
-Because the specs are not finished, the `currentTransform` or even `Path2D.addPath`originally used [SVGMatrix](https://developer.mozilla.org/en-US/docs/Web/API/SVGMatrix) which have beed deprecated. Instead, use an Array[6].
+Because the specs are not finished, the `currentTransform` or even `Path2D.addPath`originally used [SVGMatrix](https://developer.mozilla.org/en-US/docs/Web/API/SVGMatrix) which have been deprecated. Instead, use an Array[6].
 
 If you need SVGMatrix, some hacks have been implemented :
 ```ts

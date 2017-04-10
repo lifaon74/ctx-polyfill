@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Tests</title>
-  <script src="../ctx-polyfill.js?t=1234"></script>
+  <script src="../ctx-polyfill.js?t=1"></script>
   <style>
     html, body {
       padding: 0;
@@ -11,13 +11,30 @@
     }
   </style>
   <script>
+    var htmlLog = function() {
+      for(var  i = 0; i < arguments.length; i++) {
+        document.getElementById('console').appendChild(document.createTextNode(JSON.stringify(arguments[i]) + '\n'));
+      }
+    };
+
     window.onload = function() {
        canvas = document.getElementById('canvas');
        ctx = canvas.getContext('2d');
+//       const path = new Path2D();
+//       path.rect(0, 0, 10, 10);
+//       let a = 0;
+//       let t1 = performance.now();
+//       for(let i = 0; i < 1000000; i++) {
+//         a += ctx.isPointInPath(path, Math.random() * 10, Math.random() * 10) ? 1 : 0;
+//       }
+//       let t2 = performance.now();
+//       console.log(t2 - t1);
+//       console.log(a);
     };
   </script>
 </head>
 <body>
-  <canvas id="canvas" style="position: fixed; background: #fafafa; top: 0; left: 0; width: 500px; height: 500px;" width="500" height="500"></canvas>
+  <canvas id="canvas" style="background: #fafafa; width: 500px; height: 500px;" width="500" height="500"></canvas>
+  <div id="console"></div>
 </body>
 </html>

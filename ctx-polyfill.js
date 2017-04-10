@@ -8,6 +8,7 @@
   }
 
   CanvasRenderingContext2D.arrayToSVGMatrix = function(array) {
+    if(array instanceof SVGMatrix) return array;
     var matrix = document.createElementNS('http://www.w3.org/2000/svg', 'svg').createSVGMatrix();
     matrix.a = array[0];
     matrix.b = array[1];
@@ -19,6 +20,7 @@
   };
 
   CanvasRenderingContext2D.svgMatrixToArray = function(matrix) {
+    if(matrix instanceof Array) return matrix;
     if(!(matrix instanceof SVGMatrix)) throw new Error('Matrix is not a SVGMatrix');
     return [
       matrix.a,
@@ -30,6 +32,7 @@
     ];
   };
 
+
 })();
 
 (function() {
@@ -37,9 +40,10 @@
    * Polyfill CanvasRenderingContext2D
    */
 
-  // inspired form https://github.com/mozilla/pdf.js/blob/master/src/display/canvas.js
+    // inspired form https://github.com/mozilla/pdf.js/blob/master/src/display/canvas.js
 
   var canvasRenderingContext2DPrototype = CanvasRenderingContext2D.prototype;
+  var HTMLCanvasElementPrototype = HTMLCanvasElement.prototype;
 
   if(!('resetTransform' in canvasRenderingContext2DPrototype)) {
     canvasRenderingContext2DPrototype.resetTransform = function() {
@@ -62,8 +66,8 @@
         configurable: true
       });
     } else {
-      var getContext = HTMLCanvasElement.prototype.getContext;
-      HTMLCanvasElement.prototype.getContext = function(contextType, contextAttributes) {
+      var getContext = HTMLCanvasElementPrototype.getContext;
+      HTMLCanvasElementPrototype.getContext = function(contextType, contextAttributes) {
         var context = getContext.call(this, contextType, contextAttributes);
         switch(contextType) {
           case '2d':
@@ -77,7 +81,7 @@
       };
 
       Object.defineProperty(canvasRenderingContext2DPrototype, 'currentTransform', {
-        get: function () {
+        get: function() {
           return CanvasRenderingContext2D.useSvgMatrix ?
             CanvasRenderingContext2D.arrayToSVGMatrix(this._transformMatrix) : this._transformMatrix;
         },
@@ -137,7 +141,7 @@
 
       var transform = canvasRenderingContext2DPrototype.transform;
       canvasRenderingContext2DPrototype.transform = function(a, b, c, d, e, f) {
-        var matrix =  this._transformMatrix;
+        var matrix = this._transformMatrix;
         this._transformMatrix = [
           matrix[0] * a + matrix[2] * b,
           matrix[1] * a + matrix[3] * b,
@@ -150,13 +154,13 @@
       };
 
       var setTransform = canvasRenderingContext2DPrototype.setTransform;
-      canvasRenderingContext2DPrototype.setTransform  = function(a, b, c, d, e, f) {
+      canvasRenderingContext2DPrototype.setTransform = function(a, b, c, d, e, f) {
         this._transformMatrix = [a, b, c, d, e, f];
         setTransform.call(this, a, b, c, d, e, f);
       };
 
       var resetTransform = canvasRenderingContext2DPrototype.resetTransform;
-      canvasRenderingContext2DPrototype.resetTransform  = function() {
+      canvasRenderingContext2DPrototype.resetTransform = function() {
         this._transformMatrix = [1, 0, 0, 1, 0, 0];
         resetTransform.call(this);
       };
@@ -164,7 +168,7 @@
       var save = canvasRenderingContext2DPrototype.save;
       canvasRenderingContext2DPrototype.save = function() {
         this._transformStack.push(this._transformMatrix);
-        this._transformMatrix =  this._transformMatrix.slice(0, 6); // copy
+        this._transformMatrix = this._transformMatrix.slice(0, 6); // copy
         save.call(this);
       };
 
@@ -176,13 +180,13 @@
         }
         restore.call(this);
       };
-      
+
     }
   }
 
   if(!('imageSmoothingEnabled' in canvasRenderingContext2DPrototype)) {
     Object.defineProperty(canvasRenderingContext2DPrototype, 'imageSmoothingEnabled', {
-      get: function () {
+      get: function() {
         if(this.mozImageSmoothingEnabled !== void 0) {
           return this.mozImageSmoothingEnabled;
         } else if(this.webkitImageSmoothingEnabled !== void 0) {
@@ -227,30 +231,77 @@
     }
   }
 
+  // if(!('addHitRegion' in canvasRenderingContext2DPrototype)) {
+  //   var getContext = HTMLCanvasElementPrototype.getContext;
+  //   HTMLCanvasElementPrototype.getContext = function(contextType, contextAttributes) {
+  //     var context = getContext.call(this, contextType, contextAttributes);
+  //     switch(contextType) {
+  //       case '2d':
+  //         Object.defineProperties(context, {
+  //           '_hitRegions': { value: [], configurable: true, writable: true }
+  //         });
+  //         break;
+  //     }
+  //     return context;
+  //   };
+  //
+  //   HTMLCanvasElementPrototype.addEventListener = function() {
+  //
+  //   };
+  //
+  //   canvasRenderingContext2DPrototype.addHitRegion = function(options) {
+  //
+  //   }
+  // }
+
 })();
 
 (function() {
   /**
    * Polyfill Path2D
    */
-
   if(!('Path2D' in window) || !('addPath' in window.Path2D.prototype)) {
 
+    var _Path2D = window.Path2D;
+
     // polyfill Path2D class
-    window.Path2D = function(path2D) {
-      Object.defineProperty(this, '_operations', { value: [] });
+    var Path2D = function(path2D) {
+      Object.defineProperty(this, '_operations', {
+        value: [],
+        configurable: true,
+        writable: true
+      });
 
       if(path2D instanceof Path2D) {
-        this.addPath(path2D);
+        if(path2D._original && _Path2D) {
+          Object.defineProperty(this, '_original', {
+            // value: new (_Path2D.bind.apply(_Path2D, [path2D._original].concat(Array.prototype.slice.call(arguments, 1)))),
+            // value: new (Function.prototype.bind.apply(_Path2D, [path2D._original].concat(Array.prototype.slice.call(arguments, 1)))),
+            value: new _Path2D(path2D._original),
+            configurable: true,
+            writable: true
+          });
+          this._operations = path2D._operations.slice(0);
+        } else {
+          this.addPath(path2D);
+        }
+      } else if(_Path2D) {
+        Object.defineProperty(this, '_original', {
+          value: new _Path2D(path2D),
+          configurable: true,
+          writable: true
+        });
       }
     };
 
-    var path2DPrototype = window.Path2D.prototype;
+    window.Path2D = Path2D;
+    var path2DPrototype = Path2D.prototype;
 
     ['arc', 'arcTo', 'bezierCurveTo', 'closePath', 'ellipse', 'lineTo', 'moveTo', 'quadraticCurveTo', 'rect']
       .forEach(function(attributeName) {
         path2DPrototype[attributeName] = function() {
           this._operations.push({ type: attributeName, arguments: Array.prototype.slice.call(arguments, 0) });
+          if(this._original) _Path2D.prototype[attributeName].apply(this._original, arguments);
         };
       });
 
@@ -261,13 +312,17 @@
         var original = canvasRenderingContext2DPrototype[attributeName];
         canvasRenderingContext2DPrototype[attributeName] = function(path2D) {
           if(path2D instanceof Path2D) {
-            this.beginPath();
-            var operation;
-            for(var i = 0, l = path2D._operations.length; i < l; i++) {
-              operation = path2D._operations[i];
-              canvasRenderingContext2DPrototype[operation.type].apply(this, operation.arguments);
+            if(path2D._original) {
+              original.apply(this, [path2D._original].concat(Array.prototype.slice.call(arguments, 1)));
+            } else {
+              this.beginPath();
+              var operation;
+              for(var i = 0, l = path2D._operations.length; i < l; i++) {
+                operation = path2D._operations[i];
+                canvasRenderingContext2DPrototype[operation.type].apply(this, operation.arguments);
+              }
+              original.apply(this, Array.prototype.slice.call(arguments, 1));
             }
-            original.apply(this, Array.prototype.slice.call(arguments, 1));
           } else {
             original.apply(this, arguments);
           }
@@ -279,6 +334,7 @@
     if(!('addPath' in path2DPrototype)) {
       path2DPrototype.addPath = function(path2D, transform) {
         if(transform !== void 0) {
+          if(path2D._original) delete path2D._original;
           this._operations.push({ type: 'save', arguments: [] });
           this._operations.push({
             type: 'transform',
@@ -301,3 +357,33 @@
 
   }
 })();
+
+// (function() {
+//   window.addEventListener('load', function() {
+//     var canvas = document.getElementById('canvas');
+//     var ctx = canvas.getContext('2d');
+//
+//     canvas.addEventListener('mousemove', function(event) {
+//       if(event.region) {
+//         console.log(event.region);
+//       }
+//     });
+//
+//     ctx.beginPath();
+//     ctx.arc(100, 100, 75, 0, 2 * Math.PI, false);
+//     ctx.lineWidth = 5;
+//     ctx.stroke();
+//
+//     // eyes
+//     ctx.beginPath();
+//     ctx.arc(70, 80, 10, 0, 2 * Math.PI, false);
+//     ctx.arc(130, 80, 10, 0, 2 * Math.PI, false);
+//     ctx.fill();
+//     ctx.addHitRegion({id: "eyes"});
+//
+//     // mouth
+//     ctx.beginPath();
+//     ctx.arc(100, 110, 50, 0, Math.PI, false);
+//     ctx.stroke();
+//   });
+// })();

@@ -16,8 +16,8 @@ test.describe('CTX polyfill', function() {
   this.timeout(30000);
 
   tester.testWith([
-    // Tester.EDGE,
-    // Tester.CHROME,
+    Tester.EDGE,
+    Tester.CHROME,
     // Tester.FIREFOX,
     // Tester.OPERA,
     Tester.IE
@@ -162,7 +162,7 @@ test.describe('CTX polyfill', function() {
         path2D.arcTo(150, 100, 50, 20, 30);
         var path2DCopy = new Path2D(path2D);
         ctx.stroke(path2DCopy);
-
+        
         if(getPixel(ctx, 10, 10)[3] === 0) throw new Error('Path2D draw failed');
       `);
     });
