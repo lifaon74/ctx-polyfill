@@ -3,33 +3,42 @@
    * Helper to be compatible with future standard (because current standards are not yet properly defined)
    */
 
-  if(CanvasRenderingContext2D.useSvgMatrix === void 0) {
-    CanvasRenderingContext2D.useSvgMatrix = false;
+  if(CanvasRenderingContext2D.useSVGMatrix === void 0) {
+    CanvasRenderingContext2D.useSVGMatrix = false;
   }
 
-  CanvasRenderingContext2D.arrayToSVGMatrix = function(array) {
-    if(array instanceof SVGMatrix) return array;
-    var matrix = document.createElementNS('http://www.w3.org/2000/svg', 'svg').createSVGMatrix();
-    matrix.a = array[0];
-    matrix.b = array[1];
-    matrix.c = array[2];
-    matrix.d = array[3];
-    matrix.e = array[4];
-    matrix.f = array[5];
-    return matrix;
+  CanvasRenderingContext2D.arrayToSVGMatrix = function(matrix) {
+    if(matrix instanceof SVGMatrix) {
+      return matrix;
+    } else if(matrix instanceof Array) {
+      var _matrix = document.createElementNS('http://www.w3.org/2000/svg', 'svg').createSVGMatrix();
+      _matrix.a = array[0];
+      _matrix.b = array[1];
+      _matrix.c = array[2];
+      _matrix.d = array[3];
+      _matrix.e = array[4];
+      _matrix.f = array[5];
+      return _matrix;
+    } else {
+      throw new Error('Matrix is not an Array');
+    }
   };
 
   CanvasRenderingContext2D.svgMatrixToArray = function(matrix) {
-    if(matrix instanceof Array) return matrix;
-    if(!(matrix instanceof SVGMatrix)) throw new Error('Matrix is not a SVGMatrix');
-    return [
-      matrix.a,
-      matrix.b,
-      matrix.c,
-      matrix.d,
-      matrix.e,
-      matrix.f
-    ];
+    if(matrix instanceof Array) {
+      return matrix;
+    } else if(matrix instanceof SVGMatrix) {
+      return [
+        matrix.a,
+        matrix.b,
+        matrix.c,
+        matrix.d,
+        matrix.e,
+        matrix.f
+      ];
+    } else {
+      throw new Error('Matrix is not a SVGMatrix');
+    }
   };
 
 
@@ -55,12 +64,10 @@
     if('mozCurrentTransform' in canvasRenderingContext2DPrototype) {
       Object.defineProperty(canvasRenderingContext2DPrototype, 'currentTransform', {
         get: function() {
-          return CanvasRenderingContext2D.useSvgMatrix ?
-            CanvasRenderingContext2D.arrayToSVGMatrix(this.mozCurrentTransform) : this.mozCurrentTransform;
+          return this.mozCurrentTransform;
         },
         set: function(matrix) {
-          this.mozCurrentTransform = CanvasRenderingContext2D.useSvgMatrix ?
-            CanvasRenderingContext2D.svgMatrixToArray(matrix) : matrix;
+          this.mozCurrentTransform = matrix;
         },
         enumerable: true,
         configurable: true
@@ -82,12 +89,9 @@
 
       Object.defineProperty(canvasRenderingContext2DPrototype, 'currentTransform', {
         get: function() {
-          return CanvasRenderingContext2D.useSvgMatrix ?
-            CanvasRenderingContext2D.arrayToSVGMatrix(this._transformMatrix) : this._transformMatrix;
+          return this._transformMatrix;
         },
         set: function(matrix) {
-          matrix = CanvasRenderingContext2D.useSvgMatrix ?
-            CanvasRenderingContext2D.svgMatrixToArray(matrix) : matrix;
           this._transformMatrix = matrix;
           this.setTransform(
             matrix[0],
@@ -183,6 +187,24 @@
 
     }
   }
+
+  // allow conversion from arrayToSVGMatrix or svgMatrixToArray according to useSVGMatrix
+  var currentTransform = Object.getOwnPropertyDescriptor(CanvasRenderingContext2D.prototype, 'currentTransform');
+  var currentTransformIsSVGMatrix = (document.createElement('canvas').getContext('2d').currentTransform instanceof SVGMatrix);
+  Object.defineProperty(canvasRenderingContext2DPrototype, 'currentTransform', {
+    get: function() {
+      var value = currentTransform.get.call(this);
+      return CanvasRenderingContext2D.useSVGMatrix ?
+        CanvasRenderingContext2D.arrayToSVGMatrix(value) : CanvasRenderingContext2D.svgMatrixToArray(value);
+    },
+    set: function(matrix) {
+      currentTransform.set.call(this, currentTransformIsSVGMatrix ?
+        CanvasRenderingContext2D.svgMatrixToArray(matrix) : CanvasRenderingContext2D.svgMatrixToArray(matrix));
+    },
+    enumerable: true,
+    configurable: true
+  });
+
 
   if(!('imageSmoothingEnabled' in canvasRenderingContext2DPrototype)) {
     Object.defineProperty(canvasRenderingContext2DPrototype, 'imageSmoothingEnabled', {
@@ -338,8 +360,7 @@
           this._operations.push({ type: 'save', arguments: [] });
           this._operations.push({
             type: 'transform',
-            arguments: CanvasRenderingContext2D.useSvgMatrix ?
-              CanvasRenderingContext2D.svgMatrixToArray(transform) : transform
+            arguments: CanvasRenderingContext2D.svgMatrixToArray(transform)
           });
         }
 
