@@ -335,7 +335,7 @@
         canvasRenderingContext2DPrototype[attributeName] = function(path2D) {
           if(path2D instanceof Path2D) {
             if(path2D._original) {
-              original.apply(this, [path2D._original].concat(Array.prototype.slice.call(arguments, 1)));
+              return original.apply(this, [path2D._original].concat(Array.prototype.slice.call(arguments, 1)));
             } else {
               this.beginPath();
               var operation;
@@ -343,10 +343,10 @@
                 operation = path2D._operations[i];
                 canvasRenderingContext2DPrototype[operation.type].apply(this, operation.arguments);
               }
-              original.apply(this, Array.prototype.slice.call(arguments, 1));
+              return original.apply(this, Array.prototype.slice.call(arguments, 1));
             }
           } else {
-            original.apply(this, arguments);
+            return original.apply(this, arguments);
           }
         };
       });
